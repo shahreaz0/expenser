@@ -3,8 +3,6 @@ import z from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { HTTPException } from "hono/http-exception";
 
-export const expensesRoute = new Hono();
-
 const expenseSchema = z.object({
   id: z.number().int().positive(),
   title: z.string().min(3).max(100),
@@ -33,60 +31,56 @@ const fakeExpenses = [
   },
 ];
 
-expensesRoute.get("/", (c) => {
-  return c.json({ data: fakeExpenses });
-});
+export const expensesRoute = new Hono()
+  .get("/", (c) => {
+    return c.json({ data: fakeExpenses });
+  })
+  .get("/:id{[0-9]+}", (c) => {
+    if (!c.req.param("id")) {
+      throw new HTTPException(400, {
+        message: "Invalid ID",
+      });
+    }
 
-expensesRoute.get("/:id{[0-9]+}", (c) => {
-  if (!c.req.param("id")) {
-    throw new HTTPException(400, {
-      message: "Invalid ID",
+    return c.json({
+      message: "Success",
+      data: fakeExpenses.find((expense) => expense.id === +c.req.param("id")),
     });
-  }
-
-  return c.json({
-    message: "Success",
-    data: fakeExpenses.find((expense) => expense.id === +c.req.param("id")),
-  });
-});
-
-expensesRoute.get("/total", (c) => {
-  return c.json({
-    message: "Success",
-    data: fakeExpenses.reduce((acc, cur) => acc + cur.amount, 0),
-  });
-});
-
-expensesRoute.post("/", zValidator("json", expenseCreateSchema), (c) => {
-  const expenses = c.req.valid("json");
-
-  fakeExpenses.push({ id: fakeExpenses.length + 1, ...expenses });
-
-  c.status(201);
-  return c.json({ message: "Success", data: expenses });
-});
-
-expensesRoute.put("/:id{[0-9]+}", zValidator("json", expenseUpdateSchema), (c) => {
-  const id = c.req.param("id");
-
-  const expense = fakeExpenses.find((expense) => expense.id === +id);
-
-  return c.json({ message: "Success", data: expense || [] });
-});
-
-expensesRoute.delete("/:id{[0-9]+}", (c) => {
-  const id = c.req.param("id");
-
-  const expenseIndex = fakeExpenses.findIndex((expense) => expense.id === +id);
-  const expense = fakeExpenses.find((expense) => expense.id === +id);
-
-  if (expenseIndex === -1) {
-    throw new HTTPException(404, {
-      message: "Expense not found",
+  })
+  .get("/total", (c) => {
+    return c.json({
+      message: "Success",
+      data: fakeExpenses.reduce((acc, cur) => acc + cur.amount, 0),
     });
-  }
+  })
+  .post("/", zValidator("json", expenseCreateSchema), (c) => {
+    const expenses = c.req.valid("json");
 
-  fakeExpenses.splice(expenseIndex, 1);
+    fakeExpenses.push({ id: fakeExpenses.length + 1, ...expenses });
 
-  return c.json({ message: "Success", data: expense });
-});
+    c.status(201);
+    return c.json({ message: "Success", data: expenses });
+  })
+  .put("/:id{[0-9]+}", zValidator("json", expenseUpdateSchema), (c) => {
+    const id = c.req.param("id");
+
+    const expense = fakeExpenses.find((expense) => expense.id === +id);
+
+    return c.json({ message: "Success", data: expense || [] });
+  })
+  .delete("/:id{[0-9]+}", (c) => {
+    const id = c.req.param("id");
+
+    const expenseIndex = fakeExpenses.findIndex((expense) => expense.id === +id);
+    const expense = fakeExpenses.find((expense) => expense.id === +id);
+
+    if (expenseIndex === -1) {
+      throw new HTTPException(404, {
+        message: "Expense not found",
+      });
+    }
+
+    fakeExpenses.splice(expenseIndex, 1);
+
+    return c.json({ message: "Success", data: expense });
+  });

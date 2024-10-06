@@ -5,25 +5,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useEffect, useState } from "react";
+
+import { useGetTotalExpenses } from "@/hooks/rq/expenses/use-get-total-expenses";
 
 export function App() {
-  const [totalExpenses, setTotalExpenses] = useState(0);
-
-  useEffect(() => {
-    async function getTotalExpenses() {
-      try {
-        const resp = await fetch("/api/v1/expenses/total");
-        const total = await resp.json();
-
-        setTotalExpenses(total.data);
-      } catch (error) {
-        console.log({ error });
-      }
-    }
-
-    getTotalExpenses();
-  }, []);
+  const { data: totalExpenses, isLoading } = useGetTotalExpenses();
 
   return (
     <section className="m-10">
@@ -32,9 +18,7 @@ export function App() {
           <CardTitle>Total Expenses</CardTitle>
           <CardDescription>Your monthly total expenses</CardDescription>
         </CardHeader>
-        <CardContent>
-          <p>{totalExpenses}</p>
-        </CardContent>
+        <CardContent>{isLoading ? <p>...</p> : <p>{totalExpenses?.data}</p>}</CardContent>
       </Card>
     </section>
   );

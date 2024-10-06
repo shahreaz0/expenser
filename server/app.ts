@@ -1,11 +1,11 @@
 import { Hono } from "hono";
-import { rootRoute } from "./routes";
 import { HTTPException } from "hono/http-exception";
 import { serveStatic } from "hono/bun";
+import { expensesRoute } from "./routes/expenses.route";
 
 export const app = new Hono();
 
-app.route("/", rootRoute);
+const apiRoutes = app.basePath("/api/v1").route("/expenses", expensesRoute);
 
 app.get("/healthcheck", (c) => {
   return c.json({ message: "Ok", timestamp: Date.now() });
@@ -24,3 +24,5 @@ app.onError((error, c) => {
 
   return c.json({ message: error.message, status: 500 });
 });
+
+export type ApiRoutes = typeof apiRoutes;
