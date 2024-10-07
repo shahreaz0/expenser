@@ -1,3 +1,5 @@
+import { createLazyFileRoute } from "@tanstack/react-router";
+
 import {
   Card,
   CardContent,
@@ -6,9 +8,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { useGetTotalExpenses } from "@/hooks/rq/expenses/use-get-total-expenses";
+import { useGetTotalExpenses } from "@/hooks/rq/expenses/use-get-total-expense";
 
-export function App() {
+export const Route = createLazyFileRoute("/")({
+  component: Index,
+});
+
+function Index() {
   const { data: totalExpenses, isLoading } = useGetTotalExpenses();
 
   return (

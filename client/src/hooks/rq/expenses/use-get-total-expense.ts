@@ -10,7 +10,7 @@ export function useGetTotalExpenses() {
       const data = await resp.json();
 
       if (!resp.ok) {
-        throw new Error("Somthing went wrong");
+        Promise.reject(data);
       }
 
       return data;
