@@ -2,10 +2,14 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { serveStatic } from "hono/bun";
 import { expensesRoute } from "./routes/expenses.route";
+import { authRoute } from "./routes/auth.route";
 
 export const app = new Hono();
 
-const apiRoutes = app.basePath("/api/v1").route("/expenses", expensesRoute);
+const apiRoutes = app
+  .basePath("/api/v1")
+  .route("/expenses", expensesRoute)
+  .route("/", authRoute);
 
 app.get("/healthcheck", (c) => {
   return c.json({ message: "Ok", timestamp: Date.now() });
