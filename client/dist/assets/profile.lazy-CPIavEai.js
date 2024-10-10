@@ -1,0 +1,1 @@
+import{c as o,b as s,j as t}from"./index-Dz97SzDh.js";const r=o("/_authenticated/profile")({component:a});function a(){const{data:e}=s();return t.jsxs("div",{className:"p-2",children:[t.jsxs("p",{children:["Hello, ",e==null?void 0:e.user.given_name]}),t.jsx("a",{href:"/api/v1/logout",children:"logout"})]})}export{r as Route};
