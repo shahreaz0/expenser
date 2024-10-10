@@ -1,20 +1,30 @@
+import { currentUserQueryOptions } from "@/hooks/rq/auth/use-get-current-user";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 // src/routes/_authenticated.tsx
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async ({ location }) => {
-    console.log(location);
-  },
+  beforeLoad: async ({ context }) => {
+    try {
+      const data = await context.queryClient.fetchQuery(currentUserQueryOptions);
 
-  component: () => {
-    const isLoggedIn = false;
-    if (isLoggedIn) {
-      return <Login />;
+      return data;
+    } catch (error) {
+      console.log(error);
+
+      return { user: null };
     }
-
-    return <Outlet />;
   },
+  component: Component,
 });
+
+function Component() {
+  const { user } = Route.useRouteContext();
+  if (!user) {
+    return <Login />;
+  }
+
+  return <Outlet />;
+}
 
 function Login() {
   return <section>Please login</section>;

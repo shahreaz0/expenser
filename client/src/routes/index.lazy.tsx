@@ -19,6 +19,11 @@ function Index() {
 
   return (
     <section className="m-10">
+      <div className="space-x-2">
+        <a href="/api/v1/login">login</a>
+        <a href="/api/v1/register">register</a>
+      </div>
+
       <Card className="mx-auto w-1/4">
         <CardHeader>
           <CardTitle>Total Expenses</CardTitle>
