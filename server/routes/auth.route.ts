@@ -1,8 +1,6 @@
 import { Hono } from "hono";
 import { getUser, kindeClient, sessionManager } from "../configs/kinde";
 
-import { HTTPException } from "hono/http-exception";
-
 export const authRoute = new Hono()
   .get("/login", async (c) => {
     const loginUrl = await kindeClient.login(sessionManager(c));
