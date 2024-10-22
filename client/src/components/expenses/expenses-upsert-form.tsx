@@ -24,7 +24,7 @@ const FormSchema = z.object({
   title: z.string().min(2, {
     message: "Username must be at least 2 characters.",
   }),
-  amount: z.coerce.number(),
+  amount: z.string(),
 });
 
 export function ExpensesUpsertForm() {
@@ -32,7 +32,7 @@ export function ExpensesUpsertForm() {
     resolver: zodResolver(FormSchema),
     defaultValues: {
       title: "",
-      amount: 0,
+      amount: "",
     },
   });
 
@@ -41,8 +41,6 @@ export function ExpensesUpsertForm() {
   const { mutate: createExpense, isPending } = useCreateExpense();
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    console.log(data);
-
     createExpense(data, {
       onSuccess: () => {
         toast("Expense Created", {

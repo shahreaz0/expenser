@@ -6,7 +6,7 @@ export function useCreateExpense() {
 
   return useMutation({
     mutationKey: ["expense", "create"],
-    mutationFn: async (payload: { title: string; amount: number }) => {
+    mutationFn: async (payload: { title: string; amount: string }) => {
       const resp = await apiV1.expenses.$post({ json: payload });
 
       const data = await resp.json();

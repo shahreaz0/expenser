@@ -3,84 +3,114 @@ import z from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { HTTPException } from "hono/http-exception";
 
+import { db } from "../db";
+import { expensesTable } from "../db/schema/expenses";
+import { getUser } from "../configs/kinde";
+import { and, desc, eq, sum } from "drizzle-orm";
+
 const expenseSchema = z.object({
   id: z.number().int().positive(),
   title: z.string().min(3).max(100),
-  amount: z.number().positive(),
+  amount: z.string(),
 });
 
 const expenseCreateSchema = expenseSchema.omit({ id: true });
 
 const expenseUpdateSchema = expenseSchema.partial().omit({ id: true });
 
-const fakeExpenses = [
-  {
-    id: 1,
-    title: "Groceries",
-    amount: 200.0,
-  },
-  {
-    id: 2,
-    title: "Car",
-    amount: 1000.0,
-  },
-  {
-    id: 3,
-    title: "Food",
-    amount: 500.0,
-  },
-];
-
 export const expensesRoute = new Hono()
-  .get("/", (c) => {
-    return c.json({ data: fakeExpenses });
+  .get("/", getUser, async (c) => {
+    const user = c.var.user;
+
+    const expenses = await db
+      .select()
+      .from(expensesTable)
+      .where(eq(expensesTable.userId, user.id))
+      .orderBy(desc(expensesTable.createdAt))
+      .limit(100);
+
+    return c.json({ data: expenses });
   })
-  .get("/:id{[0-9]+}", (c) => {
+  .get("/:id{[0-9]+}", getUser, async (c) => {
     if (!c.req.param("id")) {
       throw new HTTPException(400, {
         message: "Invalid ID",
       });
     }
 
+    const user = c.var.user;
+    const id = +c.req.param("id");
+
+    const expense = await db
+      .select()
+      .from(expensesTable)
+      .where(and(eq(expensesTable.userId, user.id), eq(expensesTable.id, id)))
+      .then((res) => res[0]);
+
     return c.json({
       message: "Success",
-      data: fakeExpenses.find((expense) => expense.id === +c.req.param("id")),
+      data: expense,
     });
   })
-  .get("/total", (c) => {
+  .get("/total", getUser, async (c) => {
+    const user = c.var.user;
+
+    const expense = await db
+      .select({ total: sum(expensesTable.amount) })
+      .from(expensesTable)
+      .where(eq(expensesTable.userId, user.id))
+      .then((res) => res[0]);
+
     return c.json({
       message: "Success",
-      data: fakeExpenses.reduce((acc, cur) => acc + cur.amount, 0),
+      data: expense.total,
     });
   })
-  .post("/", zValidator("json", expenseCreateSchema), (c) => {
-    const expenses = c.req.valid("json");
+  .post("/", zValidator("json", expenseCreateSchema), getUser, async (c) => {
+    const expenseBody = c.req.valid("json");
+    const user = c.var.user;
 
-    fakeExpenses.push({ id: fakeExpenses.length + 1, ...expenses });
+    const expense = await db
+      .insert(expensesTable)
+      .values({
+        ...expenseBody,
+        userId: user.id,
+      })
+      .returning();
 
-    c.status(201);
-    return c.json({ message: "Success", data: expenses });
+    return c.json({ message: "Success", data: expense });
   })
-  .put("/:id{[0-9]+}", zValidator("json", expenseUpdateSchema), (c) => {
+  .put("/:id{[0-9]+}", zValidator("json", expenseUpdateSchema), getUser, async (c) => {
+    const id = c.req.param("id");
+    const expenseBody = c.req.valid("json");
+
+    const user = c.var.user;
+
+    const expense = await db
+      .update(expensesTable)
+      .set({
+        ...expenseBody,
+      })
+      .where(and(eq(expensesTable.userId, user.id), eq(expensesTable.id, +id)));
+
+    return c.json({ message: "Success", data: expense });
+  })
+  .delete("/:id{[0-9]+}", getUser, async (c) => {
     const id = c.req.param("id");
 
-    const expense = fakeExpenses.find((expense) => expense.id === +id);
+    // if (expenseIndex === -1) {
+    //   throw new HTTPException(404, {
+    //     message: "Expense not found",
+    //   });
+    // }
 
-    return c.json({ message: "Success", data: expense || [] });
-  })
-  .delete("/:id{[0-9]+}", (c) => {
-    const id = c.req.param("id");
+    const user = c.var.user;
 
-    const expenseIndex = fakeExpenses.findIndex((expense) => expense.id === +id);
-    const expense = fakeExpenses.find((expense) => expense.id === +id);
-
-    if (expenseIndex === -1) {
-      throw new HTTPException(404, {
-        message: "Expense not found",
-      });
-    }
-
-    fakeExpenses.splice(expenseIndex, 1);
+    const expense = await db
+      .delete(expensesTable)
+      .where(and(eq(expensesTable.userId, user.id), eq(expensesTable.id, +id)))
+      .returning()
+      .then((res) => res[0]);
 
     return c.json({ message: "Success", data: expense });
   });
