@@ -26,6 +26,7 @@ app.onError((error, c) => {
     return c.json({ message: error.message, status: error.status });
   }
 
+  c.status(500);
   return c.json({ message: error.message, status: 500 });
 });
 

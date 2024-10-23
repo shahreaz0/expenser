@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import z from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { HTTPException } from "hono/http-exception";
 
@@ -7,16 +6,7 @@ import { db } from "../db";
 import { expensesTable } from "../db/schema/expenses";
 import { getUser } from "../configs/kinde";
 import { and, desc, eq, sum } from "drizzle-orm";
-
-const expenseSchema = z.object({
-  id: z.number().int().positive(),
-  title: z.string().min(3).max(100),
-  amount: z.string(),
-});
-
-const expenseCreateSchema = expenseSchema.omit({ id: true });
-
-const expenseUpdateSchema = expenseSchema.partial().omit({ id: true });
+import { createExpenseSchema } from "../types/expenses";
 
 export const expensesRoute = new Hono()
   .get("/", getUser, async (c) => {
@@ -66,8 +56,9 @@ export const expensesRoute = new Hono()
       data: expense.total,
     });
   })
-  .post("/", zValidator("json", expenseCreateSchema), getUser, async (c) => {
+  .post("/", zValidator("json", createExpenseSchema), getUser, async (c) => {
     const expenseBody = c.req.valid("json");
+
     const user = c.var.user;
 
     const expense = await db
@@ -80,21 +71,26 @@ export const expensesRoute = new Hono()
 
     return c.json({ message: "Success", data: expense });
   })
-  .put("/:id{[0-9]+}", zValidator("json", expenseUpdateSchema), getUser, async (c) => {
-    const id = c.req.param("id");
-    const expenseBody = c.req.valid("json");
+  .put(
+    "/:id{[0-9]+}",
+    zValidator("json", createExpenseSchema.partial()),
+    getUser,
+    async (c) => {
+      const id = c.req.param("id");
+      const expenseBody = c.req.valid("json");
 
-    const user = c.var.user;
+      const user = c.var.user;
 
-    const expense = await db
-      .update(expensesTable)
-      .set({
-        ...expenseBody,
-      })
-      .where(and(eq(expensesTable.userId, user.id), eq(expensesTable.id, +id)));
+      const expense = await db
+        .update(expensesTable)
+        .set({
+          ...expenseBody,
+        })
+        .where(and(eq(expensesTable.userId, user.id), eq(expensesTable.id, +id)));
 
-    return c.json({ message: "Success", data: expense });
-  })
+      return c.json({ message: "Success", data: expense });
+    }
+  )
   .delete("/:id{[0-9]+}", getUser, async (c) => {
     const id = c.req.param("id");
 
