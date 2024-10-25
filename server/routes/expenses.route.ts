@@ -61,6 +61,12 @@ export const expensesRoute = new Hono()
 
     const user = c.var.user;
 
+    if (expenseBody.title === "shahreaz") {
+      throw new HTTPException(400, {
+        message: "Invalid ID",
+      });
+    }
+
     const expense = await db
       .insert(expensesTable)
       .values({
