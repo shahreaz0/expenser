@@ -20,6 +20,22 @@ export function useCreateExpense() {
       return data.data;
     },
 
+    onMutate: async (newExpense) => {
+      await queryClient.cancelQueries({ queryKey: ["expense", "list"] });
+
+      const previousTodos = queryClient.getQueryData(["expense", "list"]);
+
+      queryClient.setQueryData(["expense", "list"], (old: (typeof newExpense)[]) => {
+        return [newExpense, ...old];
+      });
+
+      return { previousTodos };
+    },
+
+    onError: (_err, _newTodo, context) => {
+      queryClient.setQueryData(["expense", "list"], context?.previousTodos);
+    },
+
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["expense", "list"] });
     },

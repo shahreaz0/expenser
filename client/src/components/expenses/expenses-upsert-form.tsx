@@ -43,13 +43,14 @@ export function ExpensesUpsertForm() {
   const { mutate: createExpense, isPending } = useCreateExpense();
 
   function onSubmit(data: z.infer<typeof createExpenseSchema>) {
+    setIsExpensesDialogOpen(false);
     createExpense(data, {
       onSuccess: () => {
         toast("Expense Created", {
           description: "The expense successfully created",
         });
 
-        setIsExpensesDialogOpen(false);
+        // setIsExpensesDialogOpen(false);
       },
     });
   }

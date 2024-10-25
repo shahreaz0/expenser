@@ -9,8 +9,6 @@ export const Route = createLazyFileRoute("/_authenticated/profile")({
 function Profile() {
   const { data: currentUser } = useGetCurrentUser();
 
-  console.log(currentUser);
-
   return (
     <div className="p-2 mt-4">
       <div className="flex items-center gap-2 w-1/4 mx-auto">
